@@ -257,19 +257,19 @@ const QUICK_PROMPTS = [
 const MOCK_RESPONSES: Record<string, { content: string; sources: string[] }> = {
   "What is InnovaBot?": {
     content: "InnovaBot is EngagePro's flagship AI-powered virtual assistant, built on advanced RAG (Retrieval-Augmented Generation) architecture. It delivers context-aware, real-time responses across voice, chat, and email channels — reducing average handling time by 40% while maintaining a 97% CSAT score. InnovaBot integrates seamlessly with CRM platforms, knowledge bases, and live-agent escalation pathways.",
-    sources: ["Company_Brochure.pdf — p.4: InnovaBot Product Overview", "Company_Brochure.pdf — p.7: Technical Architecture"],
+    sources: ["Internal Knowledge Base — InnovaBot Product Overview", "Internal Knowledge Base — Technical Architecture"],
   },
   "Tell me about CX Transformer": {
     content: "CX Transformer is EngagePro's enterprise-grade customer experience platform. It unifies omnichannel touchpoints — WhatsApp, web chat, email, voice — under a single intelligent orchestration layer. Powered by proprietary NLU models trained on 500M+ customer interactions, CX Transformer delivers personalised journeys at scale, with real-time sentiment analysis and predictive routing capabilities.",
-    sources: ["Company_Brochure.pdf — p.9: CX Transformer Suite", "Company_Brochure.pdf — p.12: Enterprise Deployment Guide"],
+    sources: ["Internal Knowledge Base — CX Transformer Suite", "Internal Knowledge Base — Enterprise Deployment Guide"],
   },
   "Where is EngagePro located?": {
     content: "EngagePro is headquartered in the Singapore IBP Area (International Business Park), a premier technology hub in the heart of Southeast Asia. This strategic location positions us at the crossroads of Asia-Pacific's fastest-growing digital economies, enabling us to serve enterprise clients across Singapore, Malaysia, Indonesia, Thailand, and beyond.",
-    sources: ["Company_Brochure.pdf — p.2: Company Overview", "Company_Brochure.pdf — p.15: Contact & Locations"],
+    sources: ["Internal Knowledge Base — Company Overview", "Internal Knowledge Base — Contact & Locations"],
   },
   "What are your key achievements?": {
     content: "EngagePro has achieved remarkable milestones since inception: recognised as a Top 10 CX AI Startup by TechAsia 2024, 40% average reduction in customer handling time across deployments, 97% CSAT across all enterprise clients, 250+ successful enterprise deployments in APAC, and processing over 10 million customer interactions monthly with 99.99% uptime SLA.",
-    sources: ["Company_Brochure.pdf — p.3: Milestones & Recognition", "Company_Brochure.pdf — p.6: Case Studies"],
+    sources: ["Internal Knowledge Base — Milestones & Recognition", "Internal Knowledge Base — Case Studies"],
   },
 };
 
@@ -281,7 +281,7 @@ function getBotResponse(msg: string): { content: string; sources: string[] } {
     ? MOCK_RESPONSES[match]
     : {
         content: "Thank you for your question! I'm InnovaBot, EngagePro's AI assistant. Based on our company knowledge base, EngagePro specialises in AI-powered customer engagement solutions across APAC. For detailed information on specific topics, feel free to use the quick prompts above or ask me anything about our products, achievements, or team.",
-        sources: ["Company_Brochure.pdf — p.1: General Information"],
+        sources: ["Internal Knowledge Base — General Information"],
       };
 }
 
@@ -563,16 +563,16 @@ export default function App() {
         <div className="absolute bottom-1/4 right-1/4 w-72 h-72 rounded-full opacity-8" style={{ background: "radial-gradient(circle, #00F0FF 0%, transparent 70%)", filter: "blur(80px)" }} />
       </div>
 
-      <div className="relative z-10 max-w-6xl mx-auto px-4 pb-28 pt-8">
+      <div className="relative z-10 pb-28 pt-8" style={{ maxWidth: 'calc(100% - 2in)', marginLeft: '1in', marginRight: '1in' }}>
 
         {/* ── Header Hero ────────────────────────────────────────────────── */}
         <motion.header
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7 }}
-          className="text-center mb-10"
+          className="text-left mb-10"
         >
-          <div className="flex items-center justify-center gap-2 mb-3">
+          <div className="flex items-center justify-start gap-2 mb-3">
             <motion.div
               animate={{ rotate: [0, 360] }}
               transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
@@ -618,9 +618,9 @@ export default function App() {
         </motion.header>
 
         {/* ── Nav Tabs ───────────────────────────────────────────────────── */}
-        <div className="flex justify-center mb-8">
+        <div className="flex justify-start mb-8">
           <div className="flex p-1 rounded-xl gap-1" style={{ background: "rgba(10,25,47,0.8)", border: "1px solid rgba(0,240,255,0.12)" }}>
-            {([["portal", "Corporate Portal"], ["chat", "Chat with InnovaBot"]] as const).map(([id, label]) => (
+            {([['portal', 'Corporate Portal'], ['chat', 'Chat with Innovabot']] as const).map(([id, label]) => (
               <button
                 key={id}
                 onClick={() => setActiveTab(id)}
@@ -642,8 +642,8 @@ export default function App() {
             <motion.div key="portal" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.3 }}>
 
               {/* Row 1: About + Vision + Mission */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <GlassCard className="md:col-span-1 p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                <GlassCard className="p-6">
                   <div className="flex items-center gap-2 mb-3">
                     <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: "rgba(0,102,255,0.2)", border: "1px solid rgba(0,102,255,0.4)" }}>
                       <Globe size={12} className="text-[#0066FF]" />
@@ -733,7 +733,9 @@ export default function App() {
 
               {/* Row 3: CTA Banner */}
               <GlassCard className="p-6 text-center">
-                <p className="text-sm text-[#F8FAFC]/60 font-['Exo_2'] mb-3">Ready to transform your customer engagement?</p>
+                <p className="text-sm font-['Rajdhani'] font-black tracking-wide mb-3" style={{ color: '#FFDD00', textShadow: '0 0 1px rgba(10,25,47,0.9), 0 0 2px rgba(10,25,47,0.9)', WebkitTextStroke: '0.75px #071829' }}>
+                  Ready to transform your customer engagement?
+                </p>
                 <div className="flex items-center justify-center gap-3 flex-wrap">
                   <motion.button
                     whileHover={{ scale: 1.04, boxShadow: "0 0 30px rgba(0,102,255,0.5)" }}
@@ -743,7 +745,7 @@ export default function App() {
                     style={{ background: "linear-gradient(135deg, #0066FF 0%, #00F0FF 100%)" }}
                   >
                     <MessageSquare size={14} />
-                    Chat with InnovaBot
+                    Chat with Innovabot
                     <ChevronRight size={14} />
                   </motion.button>
                   <a
@@ -762,7 +764,7 @@ export default function App() {
           {/* ── Chat Tab ──────────────────────────────────────────────────── */}
           {activeTab === "chat" && (
             <motion.div key="chat" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
-              <GlassCard className="p-6" style={{ minHeight: "520px" }}>
+              <GlassCard className="p-6" style={{ minHeight: "calc(100vh - 220px)" }}>
                 {/* Chat header */}
                 <div className="flex items-center gap-3 pb-4 mb-4" style={{ borderBottom: "1px solid rgba(0,240,255,0.1)" }}>
                   <BotAvatar thinking={false} />
@@ -770,17 +772,11 @@ export default function App() {
                     <h3 className="text-sm font-bold text-[#F8FAFC] font-['Rajdhani'] tracking-wider">INNOVABOT</h3>
                     <div className="flex items-center gap-1.5">
                       <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                      <span className="text-[10px] text-[#64748B] font-['JetBrains_Mono']">Online · RAG-powered · v2.4</span>
-                    </div>
-                  </div>
-                  <div className="ml-auto flex items-center gap-2">
-                    <div className="text-[10px] text-[#64748B] font-['JetBrains_Mono'] hidden sm:block">Company_Brochure.pdf</div>
-                    <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: "rgba(0,240,255,0.08)", border: "1px solid rgba(0,240,255,0.15)" }}>
-                      <ExternalLink size={10} className="text-[#00F0FF]" />
+                      <span className="text-[10px] text-[#64748B] font-['JetBrains_Mono']">Innovabot online · RAG-powered</span>
                     </div>
                   </div>
                 </div>
-                <div style={{ height: "440px", display: "flex", flexDirection: "column" }}>
+                <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
                   <ChatInterface />
                 </div>
               </GlassCard>
