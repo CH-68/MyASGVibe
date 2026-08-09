@@ -1,0 +1,18 @@
+/* Minimal static styles to approximate the original UI without Tailwind or build step */
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Exo+2:ital,wght@0,100..900;1,100..900&family=JetBrains+Mono:wght@300;400;500&display=swap');
+
+:root{font-family: 'Rajdhani', sans-serif;--bg:var(--color-background,#fff);--fg:var(--color-foreground,#000);--card:var(--color-card,#fff);--accent:#e9ebef}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);margin:0}
+.app{display:flex;min-height:100vh}
+.sidebar{width:220px;padding:20px;border-right:1px solid rgba(0,0,0,0.06);background:var(--color-sidebar, #fafafa)}
+.brand{font-size:1.1rem;margin:0 0 1rem}
+.content{flex:1;padding:24px}
+.topbar h1{margin:0;font-size:1.6rem}
+.subtitle{margin:4px 0 16px;color:var(--color-muted-foreground,#666)}
+.card{background:var(--card);border-radius:8px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,0.04);max-width:800px}
+.btn{display:inline-block;padding:8px 12px;border-radius:6px;border:1px solid rgba(0,0,0,0.06);background:transparent;cursor:pointer}
+.btn.primary{background:var(--color-primary,#030213);color:white;border:none}
+
+/* simple responsive */
+@media (max-width:640px){.sidebar{display:none}.content{padding:12px}}

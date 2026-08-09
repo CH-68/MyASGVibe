@@ -1,0 +1,16 @@
+streamlit
+pandas
+langchain-openai
+langchain-community
+langchain-core>=0.1.27
+sentence-transformers
+presidio-analyzer
+presidio-anonymizer
+faiss-cpu
+pypdf
+flask
+requests
+beautifulsoup4
+# The following is often a dependency of sentence-transformers but can be specified
+torch
+torchvision

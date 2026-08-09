@@ -1,0 +1,6 @@
+__pycache__/
+.venv/
+*.pyc
+
+Company_Brochure.pkl
+uploads/
