@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List
 import os
@@ -12,6 +13,16 @@ from config import hf_embeddings
 from utils import anonymize_text
 
 app = FastAPI()
+
+# Add CORS middleware to allow the frontend (e.g., React on port 3000)
+# to communicate with this backend on port 5000.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, restrict this to your frontend's domain
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 FAISS_INDEX_PATH = "faiss_index"
 
@@ -110,9 +121,11 @@ async def chat_endpoint(request: ChatRequest):
     request.prompt = anonymize_text(request.prompt)
     return StreamingResponse(response_generator(request), media_type="application/x-ndjson")
 
+@app.get("/")
+def read_root():
+    """A simple endpoint to confirm the server is running."""
+    return {"message": "FastAPI server for InnovaBot is running. Access the /docs for API documentation."}
+
 if __name__ == "__main__":
     import uvicorn
-    # Note: The frontend expects the backend on port 5000.
-    # The user request mentioned port 8000 for FastAPI, but I am keeping 5000
-    # to ensure compatibility with the existing frontend configuration.
-    uvicorn.run(app, host="0.0.0.0", port=5000)
+    uvicorn.run("app:app", host="0.0.0.0", port=5000, reload=True)
