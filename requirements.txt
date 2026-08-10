@@ -8,6 +8,7 @@ presidio-analyzer
 presidio-anonymizer
 faiss-cpu
 pypdf
+fastapi
 flask
 requests
 beautifulsoup4
