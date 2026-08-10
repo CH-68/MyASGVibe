@@ -7,7 +7,8 @@ import json
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_community.vectorstores import FAISS
 from langchain_core.messages import AIMessage, HumanMessage, trim_messages
-from config import hf_embeddings, llm_local
+from langchain_openai import ChatOpenAI
+from config import hf_embeddings
 from utils import anonymize_text
 
 app = FastAPI()
@@ -16,7 +17,7 @@ FAISS_INDEX_PATH = "faiss_index"
 
 # Point the LLM to LM Studio's local server
 llm = ChatOpenAI(
-    base_url="http://localhost:1234/v1",
+    openai_api_base="http://localhost:1234/v1",
     api_key="not-needed",
     temperature=0.,
     model="local-model" # This can be generic as LM Studio uses the loaded model
