@@ -1,6 +1,5 @@
 from langchain_openai import ChatOpenAI
 from langchain_community.embeddings import HuggingFaceEmbeddings
-import os
 
 # Configure your language model to use a local LLM studio endpoint
 llm_local = ChatOpenAI(

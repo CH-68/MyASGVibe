@@ -3,19 +3,18 @@ import os
 import pandas as pd
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_core.documents import Document
+from langchain_community.vectorstores import FAISS
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from config import hf_embeddings, llm_local
+from config import hf_embeddings
 from utils import anonymize_text, check_password
-import numpy as np
 import requests
 from bs4 import BeautifulSoup
 from typing import List
 
 # --- Web Crawling Configuration ---
 WEBSITE_URLS = [
-    "https://www.linkedin.com/company/engagepro/about/",
-    "https://engagepro.com/about-us/",
-    "https://engagepro.com/how-it-works/"
+    "https://www.linkedin.com/pulse/next-frontier-customer-engagement-ai-enabled-service-algo-new-uot0f",
+    "https://mattdallisson.com/leadership/digital-transformation/the-next-frontier-of-customer-engagement-ai-enabled-customer-service/"
 ]
 
 def load_urls(urls: List[str]) -> List[Document]:
@@ -34,10 +33,10 @@ def load_urls(urls: List[str]) -> List[Document]:
     return docs
 
 #Guardrails
-def embed_and_save_knowledge_base(pdf_path, urls, pickle_path):
+def embed_and_save_knowledge_base(pdf_path, urls, index_path):
     """
-    Loads a PDF, splits it into chunks, generates embeddings,
-    and saves the result to a pickle file.
+    Loads documents, splits them into chunks, generates embeddings,
+    and saves them as a FAISS index.
     """
     try:
         # Load the PDF
@@ -52,27 +51,19 @@ def embed_and_save_knowledge_base(pdf_path, urls, pickle_path):
         all_docs = pdf_docs + web_docs
         docs = text_splitter.split_documents(all_docs)
         
-        # Prepare data for DataFrame
-        documents_data = []
-        for doc in docs:
-            # Anonymize content before embedding
-            original_content = doc.page_content
-            anonymized_content = anonymize_text(original_content)
-            embedding = hf_embeddings.embed_query(anonymized_content)
-            documents_data.append({
-                "content": anonymized_content,
-                "embedding": embedding,
-                "source": doc.metadata
-            })
-        
-        # Create DataFrame and save to pickle
-        df = pd.DataFrame(documents_data)
-        if df.empty:
+        if not docs:
             st.warning("No content was processed. The knowledge base is empty.")
             return
-        df.to_pickle(pickle_path)
-        
-        st.success(f"Successfully processed and saved '{os.path.basename(pdf_path)}' to '{pickle_path}'")
+
+        # Anonymize content before embedding
+        anonymized_texts = [anonymize_text(doc.page_content) for doc in docs]
+        metadatas = [doc.metadata for doc in docs]
+
+        # Create FAISS index from the documents and save it
+        vector_store = FAISS.from_texts(anonymized_texts, hf_embeddings, metadatas=metadatas)
+        vector_store.save_local(index_path)
+
+        st.success(f"Successfully processed and saved knowledge base to '{index_path}'")
     except Exception as e:
         st.error(f"An error occurred: {e}")
 
@@ -106,7 +97,7 @@ def admin_page():
                 os.makedirs(upload_dir)
                 
             pdf_path = os.path.join(upload_dir, "Company_Brochure.pdf")
-            pickle_path = "Company_Brochure.pkl"
+            index_path = "faiss_index"
 
             # Save the uploaded file
             with open(pdf_path, "wb") as f:
@@ -116,7 +107,7 @@ def admin_page():
 
             if st.button("Process and Embed Document"):
                 with st.spinner("Processing PDF and generating embeddings... This may take a moment."):
-                    embed_and_save_knowledge_base(pdf_path, WEBSITE_URLS, pickle_path)
+                    embed_and_save_knowledge_base(pdf_path, WEBSITE_URLS, index_path)
 
         if st.button("Logout"):
             st.session_state.password_correct = False

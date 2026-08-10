@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
+// Import the converted JSON data directly into your frontend
 import {
   Zap, Target, Layers, Users, MessageSquare, X, ChevronDown,
-  Send, RotateCcw, Phone, Mail, MapPin, ExternalLink, Star,
+  Send, RotateCcw, Phone, Mail, MapPin, ExternalLink, Star, FileText,
   TrendingUp, Award, Globe, Sparkles, Bot, ChevronRight
 } from "lucide-react";
 
@@ -254,35 +255,86 @@ const QUICK_PROMPTS = [
   "What are your key achievements?",
 ];
 
-const MOCK_RESPONSES: Record<string, { content: string; sources: string[] }> = {
-  "What is InnovaBot?": {
-    content: "InnovaBot is EngagePro's flagship AI-powered virtual assistant, built on advanced RAG (Retrieval-Augmented Generation) architecture. It delivers context-aware, real-time responses across voice, chat, and email channels — reducing average handling time by 40% while maintaining a 97% CSAT score. InnovaBot integrates seamlessly with CRM platforms, knowledge bases, and live-agent escalation pathways.",
-    sources: ["Internal Knowledge Base — InnovaBot Product Overview", "Internal Knowledge Base — Technical Architecture"],
-  },
-  "Tell me about CX Transformer": {
-    content: "CX Transformer is EngagePro's enterprise-grade customer experience platform. It unifies omnichannel touchpoints — WhatsApp, web chat, email, voice — under a single intelligent orchestration layer. Powered by proprietary NLU models trained on 500M+ customer interactions, CX Transformer delivers personalised journeys at scale, with real-time sentiment analysis and predictive routing capabilities.",
-    sources: ["Internal Knowledge Base — CX Transformer Suite", "Internal Knowledge Base — Enterprise Deployment Guide"],
-  },
-  "Where is EngagePro located?": {
-    content: "EngagePro is headquartered in the Singapore IBP Area (International Business Park), a premier technology hub in the heart of Southeast Asia. This strategic location positions us at the crossroads of Asia-Pacific's fastest-growing digital economies, enabling us to serve enterprise clients across Singapore, Malaysia, Indonesia, Thailand, and beyond.",
-    sources: ["Internal Knowledge Base — Company Overview", "Internal Knowledge Base — Contact & Locations"],
-  },
-  "What are your key achievements?": {
-    content: "EngagePro has achieved remarkable milestones since inception: recognised as a Top 10 CX AI Startup by TechAsia 2024, 40% average reduction in customer handling time across deployments, 97% CSAT across all enterprise clients, 250+ successful enterprise deployments in APAC, and processing over 10 million customer interactions monthly with 99.99% uptime SLA.",
-    sources: ["Internal Knowledge Base — Milestones & Recognition", "Internal Knowledge Base — Case Studies"],
-  },
-};
+// The RAG logic is now handled by the Python backend.
+// This function will call the FastAPI endpoint.
+async function getBotResponse(
+  prompt: string,
+  history: Message[],
+  onChunk: (chunk: string, isSource?: boolean) => void,
+  onDone: (sources: string[]) => void
+) {
+  try {
+    const response = await fetch("http://localhost:5000/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        prompt: prompt,
+        history: history.slice(0, -1).map(({ id, ...rest }) => rest), // Send history, excluding the current user message
+      }),
+    });
 
-function getBotResponse(msg: string): { content: string; sources: string[] } {
-  const match = Object.keys(MOCK_RESPONSES).find((k) =>
-    msg.toLowerCase().includes(k.toLowerCase().split(" ")[1] ?? k.toLowerCase())
-  );
-  return match
-    ? MOCK_RESPONSES[match]
-    : {
-        content: "Thank you for your question! I'm InnovaBot, EngagePro's AI assistant. Based on our company knowledge base, EngagePro specialises in AI-powered customer engagement solutions across APAC. For detailed information on specific topics, feel free to use the quick prompts above or ask me anything about our products, achievements, or team.",
-        sources: ["Internal Knowledge Base — General Information"],
-      };
+    if (!response.body) {
+      throw new Error("Response body is null");
+    }
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      onChunk(`Error from backend: ${errorText}`, false);
+      onDone([]);
+      return;
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        break;
+      }
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || ""; // Keep the last partial line
+
+      for (const line of lines) {
+        if (line.trim() === "") continue;
+        try {
+          const parsed = JSON.parse(line);
+          if (parsed.type === "content") {
+            onChunk(parsed.data, false);
+          } else if (parsed.type === "sources") {
+            onDone(parsed.data);
+          }
+        } catch (e) {
+          console.error("Failed to parse JSON from stream:", line, e);
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error fetching LLM response:", error);
+    onChunk("I'm having trouble connecting to the backend service. Please ensure the FastAPI server is running on port 5000.", false);
+    onDone([]);
+  }
+}
+
+function SourceIcon({ source }: { source: string }) {
+  try {
+    const url = new URL(source);
+    // It's a valid URL, show favicon
+    return (
+      <img
+        src={`https://www.google.com/s2/favicons?sz=16&domain_url=${url.hostname}`}
+        alt={`Favicon for ${url.hostname}`}
+        className="w-3 h-3 mt-0.5 shrink-0"
+        width="12"
+        height="12"
+      />
+    );
+  } catch (e) {
+    // Not a URL, assume it's a local file path
+    return <FileText size={12} className="mt-0.5 text-[#00F0FF]/40 shrink-0" />;
+  }
 }
 
 function SourceCitation({ sources }: { sources: string[] }) {
@@ -307,9 +359,9 @@ function SourceCitation({ sources }: { sources: string[] }) {
           >
             <div className="mt-2 space-y-1">
               {sources.map((s, i) => (
-                <div key={i} className="flex items-start gap-2 text-[10px] font-['JetBrains_Mono'] text-[#64748B] p-2 rounded-lg"
+                <div key={i} className="flex items-start gap-2 text-[10px] font-['JetBrains_Mono'] text-[#94A3B8] p-2 rounded-lg"
                   style={{ background: "rgba(0,240,255,0.04)", border: "1px solid rgba(0,240,255,0.08)" }}>
-                  <ExternalLink size={8} className="mt-0.5 text-[#00F0FF]/40 shrink-0" />
+                  <SourceIcon source={s} />
                   {s}
                 </div>
               ))}
@@ -344,15 +396,29 @@ function BotAvatar({ thinking }: { thinking: boolean }) {
   );
 }
 
+const CHAT_HISTORY_KEY = "innovaBotChatHistory";
+
 function ChatInterface() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: "assistant",
-      content: "Hello! I'm InnovaBot — EngagePro's AI-powered assistant. Ask me anything about our products, achievements, or how we can transform your customer engagement.",
-      sources: [],
-      id: "init",
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>(() => {
+    try {
+      const savedHistory = window.localStorage.getItem(CHAT_HISTORY_KEY);
+      if (savedHistory) {
+        const parsed = JSON.parse(savedHistory);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load chat history from localStorage:", error);
+    }
+    return [{
+        role: "assistant",
+        content: "Hello! I'm InnovaBot — EngagePro's AI-powered assistant. Ask me anything about our products, achievements, or how we can transform your customer engagement.",
+        sources: [],
+        id: "init",
+      }];
+  });
+
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
   const [typingId, setTypingId] = useState<string | null>(null);
@@ -360,22 +426,53 @@ function ChatInterface() {
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, thinking]);
 
-  const sendMessage = useCallback((text: string) => {
+  // Save chat history to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      // Avoid saving the very first default message if no interaction has occurred
+      if (messages.length > 1 || (messages.length === 1 && messages[0].id !== "init")) {
+        window.localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(messages));
+      }
+    } catch (error) {
+      console.error("Failed to save chat history to localStorage:", error);
+    }
+  }, [messages]);
+
+  const sendMessage = useCallback(async (text: string) => {
     if (!text.trim() || thinking) return;
     const uid = Date.now().toString();
+    const aid = (Date.now() + 1).toString();
+
     setMessages((m) => [...m, { role: "user", content: text, id: uid }]);
     setInput("");
     setThinking(true);
-    setTimeout(() => {
-      const resp = getBotResponse(text);
-      const aid = (Date.now() + 1).toString();
-      setThinking(false);
-      setTypingId(aid);
-      setMessages((m) => [...m, { role: "assistant", content: resp.content, sources: resp.sources, id: aid }]);
-    }, 1200 + Math.random() * 600);
-  }, [thinking]);
+
+    // Add a placeholder for the assistant's response
+    setMessages((m) => [...m, { role: "assistant", content: "", sources: [], id: aid }]);
+
+    await getBotResponse(
+      text,
+      messages, // Pass current history
+      (chunk) => {
+        // Append chunk to the latest assistant message for streaming effect
+        setMessages((prevMessages) =>
+          prevMessages.map((msg) =>
+            msg.id === aid ? { ...msg, content: msg.content + chunk } : msg
+          )
+        );
+        setThinking(false); // Stop thinking indicator on first chunk
+      },
+      (sources) => {
+        // When streaming is done, update the sources for the final message
+        setMessages((prevMessages) =>
+          prevMessages.map((msg) => (msg.id === aid ? { ...msg, sources } : msg))
+        );
+      }
+    );
+  }, [thinking, setMessages, setInput, setThinking]);
 
   const clearChat = () => {
+    window.localStorage.removeItem(CHAT_HISTORY_KEY);
     setMessages([{ role: "assistant", content: "Session reset. How can I help you today?", sources: [], id: Date.now().toString() }]);
     setThinking(false);
     setTypingId(null);
@@ -424,9 +521,7 @@ function ChatInterface() {
                     : { background: "rgba(10,25,47,0.7)", border: "1px solid rgba(0,240,255,0.12)", color: "#F8FAFC", borderRadius: "18px 18px 18px 4px" }
                   }
                 >
-                  {msg.role === "assistant" && msg.id === typingId
-                    ? <Typewriter text={msg.content} onDone={() => setTypingId(null)} />
-                    : msg.content}
+                  {msg.content}
                 </div>
                 {msg.role === "assistant" && msg.sources && msg.sources.length > 0 && msg.id !== typingId && (
                   <SourceCitation sources={msg.sources} />
